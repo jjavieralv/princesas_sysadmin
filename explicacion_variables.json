@@ -1,0 +1,51 @@
+{
+  //nombre del programador
+  "programmer": "jjavieralv",
+  //nombre del programa, será usado para el acceso por red y todos nombres
+  //la ruta a tu lo que sea será pruebitarulando.coredumped.es
+  "program": "pruebitarulando",
+  //la imagen es el nombre que has puesto a la imagen importada. Como importar la imagen
+  //aparece explicado en el script para usuarios
+  "image": "",
+
+//estos valores son usados si desea que su conexion este cifrada por tls, dejalo en blanco
+//si quieres que tus valores esten en texto plano. Si no, puedes usar el siguiente comando para
+//generar un certificado autofirmado
+// openssl req -new -newkey rsa:4096 -x509 -sha256 -days 10000 -nodes -out MyCertificate.crt -keyout MyKey.key
+  "tls": {
+    "crt": "",
+    "key": ""
+  },
+ 
+//a la hora de que realice el despliegue puedes definir variables. Estas serán tomadas por el contenedor como variables(las
+//puedes ver si accedes al contenedor y haces un echo $nombredetuvar)
+
+  "vars":[
+    {
+      "deploy": [
+        {
+          "name": "",
+          "value": ""
+        }
+      ]
+    }
+  ],
+
+//En los secrets tienes que especificar tanto el nombre que quieres que lleven como el
+//nombre del secret. Es igual que las variables pero mas seguros. Todo en texto plano(puedes poner el
+// mismo nombre a name y a namekey)
+  "secrets":[
+    {
+      "deploy": [
+        {
+          "name": "",
+          "namekey": "",
+          "value": ""
+        }
+      ]
+    }
+  ]
+}
+
+//SI NO QUIERES USAR VARIABLES NI SECRETS, DEJA EL FICHERO TAL COMO ESTÁ
+

@@ -1,0 +1,34 @@
+{
+  "programmer": "",
+  "program": "",
+  "image": "",
+
+  "tls": {
+    "crt": "",
+    "key": ""
+  },
+
+  "vars":[
+    {
+      "deploy": [
+        {
+          "name": "",
+          "value": ""
+        }
+      ]
+    }
+  ],
+
+
+  "secrets":[
+    {
+      "deploy": [
+        {
+          "name": "",
+          "namekey": "",
+          "value": ""
+        }
+      ]
+    }
+  ]
+}

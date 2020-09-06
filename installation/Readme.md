@@ -58,17 +58,17 @@ La ip estatica nos sirve para mantener la misma IP en la subred aunque reiniciem
     A. Adaptador de red (eth0, wlan0, enp0s3...)
 Como estos datos pueden variar (ver esquema de red), pondré los comandos a seguir utilizando las letras G,M,I... mencionadas anteriormente.
 
-    1. Ejecutar el siguiente comando y anotar el nombre del adaptador red que estemos usando (suele set eth0, wlan0 (el lo que sale a la izq del todo))  
+1. Ejecutar el siguiente comando y anotar el nombre del adaptador red que estemos usando (suele set eth0, wlan0 (el lo que sale a la izq del todo))  
         `ip a`
-    2. Acceder como root al archivo /etc/network/interfaces  
+2. Acceder como root al archivo /etc/network/interfaces  
         `sudo nano  /etc/network/interfaces`
         Ahí, y sabiendo todas las anteriores direcciones, dejar el archivo como en el ejemplo installation/config/interfaces  
-    3. Ejecuta tambien los siguientes comandos para identificar el dns
+3. Ejecuta tambien los siguientes comandos para identificar el dns
         `echo "domain localdomain" >> /etc/resolv.conf`
         `echo "search localdomain" >> /etc/resolv.conf`
-    3. Reiniciar con  
+4. Reiniciar con  
         `sudo reboot`
-    4. Comprobar que la ip es la que hemos especificado. Usa de nuevo 
+5. Comprobar que la ip es la que hemos especificado. Usa de nuevo 
         `ip a`
 
 ### Crear el user notroot
@@ -107,24 +107,116 @@ Es conveniente tener un usuario que no tenga permisos de administación, para qu
 
 Una vez que tenemos hecho todo lo anterior, ya estariamos preparados para instalar nuestro Kubernetes y empezar a configurar todo. 
 
-### Permitir a las IPTABLES ver el trafico puente
+### Instalar Docker
 
-Lo primero vamos a hacer va a ser configurar el sistema para que las iptables "vean" correctamente el trafico que esta pasando:
+Para instalar kuberntes tan solo sigue estos pasos. De momento esto es común tanto para el nodo maestro(blancanieves) como para el resto. En caso de que haya algún paso que sea solo para los esclavos(enanitos), será indicado.
 
-1. Habilita el modulo necesario  
-    `sudo modprobe br_netfilter`
-2. Comprueba que se ha habilitado (debe devolverte algo)
-    `lsmod | grep br_netfilter`
-3. a
+1. Actualizar la lista de paquetes  
+    `sudo apt-get update`  
+2. Instalar Docker  
+    `sudo apt-get install docker.io`
+3. Comprueba que se ha instalado correctamente  
+    `docker ––version`
+4. Habilita la ejecución de docker al inicio  
+    `sudo systemctl enable docker`  
+5. Comprueba que este habilitado y corriendo  
+    `sudo systemctl status docker`  
+6. Si no esta corriendo, arrancalo con este comando  
+    `sudo systemctl start docker`
+7. Probar que el grupo esta creado  
+    `sudo groupadd docker`
+8. Agregar blancanieves a ese grupo para no necesitar sudo  
+    `sudo usermod -aG docker $USER`
+9. Aplicar los cambios  
+    `newgrp docker`
+
+### Agregar la clave y los repositorios necesarios
+
+Esta parte es necesaria para comprobar que el software es autentico y poder descargarlo a través de apt
+
+1. Comprueba que curl y gnupg esta instalado 
+     `sudo apt-get install curl gnupg` 
+2. Agrega la clave a apt  
+    `curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add`  
+3. Agrega los repositorios. Si no te reconoce el comando, ejecuta el paso 4 en su lugar  
+    `sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"`  
+4. **SI EL PASO ANTERIOR NO HA FUNCIONADO** Ejecuta los siguientes  
+    `sudo apt edit-sources`  
+    selecciona nano(opcion 1)
+    Ahí, baja hasta abajo y pega(Ctrl+shift+v) la siguiente linea  
+    `deb http://apt.kubernetes.io/ kubernetes-xenial main`  
+    Guarda con CTRL+X ,y , enter
+5. Actualiza el listado de repositorios  
+    `sudo apt update`
 
 
+### Instala Kubertnetes
+
+1. Instalar los paquetes necesarios  
+    `sudo apt-get install kubeadm kubelet kubectl`
+2. Para no tener problemas en el futuro, deshabilitamos las actualizaciones  automáticas de estos paquetes  
+    `sudo apt-mark hold kubeadm kubelet kubectl`
+3. Comprueba que este todo instalado correctamente   
+    `kubeadm version`
+
+### Configurando arranque de Kubernetes
+
+1. Deshabilitamos la memoria swap para evitar posibles problemas más adelante  
+    `sudo swapoff –all` o `sudo swapoff -a`
+2. 1. **SI EL COMANDO ANTERIOR FALLA** deshabilitaremos la swap de la siguiente manera  
+    `free -h`  
+    1. 2. Si aqui **NO** hay una entrada que ponga swap, continua con el paso 2.
+    Modifica /etc/fstab y comenta(añade # al principio) a la linea que contenga la palabra swap. Luego guarda  
+    `sudo nano /etc/fstab`
+3. Asignamos un nombre estático al nodo-master  
+    `sudo hostnamectl set-hostname blancanieves`
+    2. 1. En caso de que sea un NODO ESCLAVO ejecutar este comando en lugar del anterior  
+    `sudo hostnamectl set-hostname enanito1`
+
+### Arrancando Kubernetes
+
+Ahora, desde el nodo master ejecutamos los siguientes comandos  
+
+1. Inicializamos el cluster **LEE EL SIGUIENTE PASO ANTES**  
+    `sudo kubeadm init --pod-network-cidr=10.244.0.0/16`
+2. **MUY AL LORO** al final nos sale un mensaje que pone *kubeadm join*, haced foto, captura o lo que querais, pero dejad bien guardada y apuntada esa entrada, ya que contiene el token que usaremos para conectar a los "enanitos" al cluster cuando queramos  
+3. Creamos el directorio para el cluster  
+    `mkdir -p $HOME/.kube`  
+    `sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config`   
+    `sudo chown $(id -u):$(id -g) $HOME/.kube/config`  
+
+### Creando el pod para gestion de Network del cluster
+
+Es una manera de que los pods puedan comunicarse. Usarán la network virtual flannel  
+`kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml`   
+
+Una vez hecho, comprobamos que todo este funcionando  
+`kubectl get pods --all-namespaces`  
+
+### (EXTRA) Agregar workers (enanitos) al cluster
+
+En caso de que quieras agregar más nodos para que se repartan el trabajo en el futuro, se hace así.  
+Una vez que en el nodo se ha instalado todo el sistema kubernetes, agrega este pod al cluster así. Desde el nodo worker, ejecuta el siguiente comando, sustituye el token por el token que has guardado en el paso de Arrancando Kubernetes.  
+    `kubeadm join --discovery-token tokenquehasguardado --discovery-token-ca-cert-hash sha256:1234..cdef 1.2.3.4:6443`  
+Ahora probamos que se haya añadido correctamente.  
+    `kubectl get nodes`
 
 
+### enlaces de interes
+https://github.com/calebhailey/homelab/issues/3 (maquinas no arrancan)
+
+### ejemplo de inicio
+
+kubectl run bootcamp --image=docker.io/jocatalin/kubernetes-bootcamp:v1 --port=8080
+
+kubectl expose deployment/bootcamp --type="LoadBalancer" --port 8080
+
+export EXTERNAL_IP=$(kubectl get service bootcamp --output=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+export PORT=$(kubectl get services --output=jsonpath='{.items[0].spec.ports[0].port}')
+
+curl "$EXTERNAL_IP:$PORT"
 
 
-
-
-
-
-
-
+para parchear las conexiones
+kubectl patch svc <svc-name> -n <namespace> -p '{"spec": {"type": "LoadBalancer", "externalIPs":["172.31.71.218"]}}'
