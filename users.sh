@@ -230,8 +230,8 @@ echo "        - name: $(jq .vars[0].deploy[$i].name "$1"|tr -d '"')
 echo "        - name: $(jq .secrets[0].deploy[$i].name "$1"|tr -d '"')
           valueFrom:
             secretKeyRef:
-              name: $(jq .secrets[0].deploy[$i].name "$1"|tr -d '"')">>"$2"-secret
-              key: $(jq .secrets[0].deploy[$i].namekey $1|tr -d '"').key
+              name: $(jq .secrets[0].deploy[$i].name "$1"|tr -d '"')-secret
+              key: $(jq .secrets[0].deploy[$i].namekey $1|tr -d '"').key">>"$2"
               
 			done
 		fi
@@ -263,6 +263,7 @@ echo "        ports:
 			create_services "$FILE" "$CONFIG_FILE" 
 			create_ingress "$FILE" "$CONFIG_FILE" 
 			create_deployment "$FILE" "$CONFIG_FILE" 
+			microk8s kubectl apply -f "$CONFIG_FILE"
 		fi
 	}
 
