@@ -1,12 +1,12 @@
 {
   //nombre del programador
-  "programmer": "jjavieralv",
+  "programmer": "chachiprogrammer",
   //nombre del programa, será usado para el acceso por red y todos nombres
   //la ruta a tu lo que sea será pruebitarulando.coredumped.es
-  "program": "pruebitarulando",
+  "program": "chachi",
   //la imagen es el nombre que has puesto a la imagen importada. Como importar la imagen
   //aparece explicado en el script para usuarios
-  "image": "",
+  "image": "gcr.io/google-samples/hello-app:1.0",
 
 //estos valores son usados si desea que su conexion este cifrada por tls, dejalo en blanco
 //si quieres que tus valores esten en texto plano. Si no, puedes usar el siguiente comando para
@@ -18,14 +18,15 @@
   },
  
 //a la hora de que realice el despliegue puedes definir variables. Estas serán tomadas por el contenedor como variables(las
-//puedes ver si accedes al contenedor y haces un echo $nombredetuvar)
+//puedes ver si accedes al contenedor y haces un echo $nombredetuvar). Si no quieres usar ninguna, deja el primer objeto 
+// vacio. CUIDADO CON USAR NOMBRES RESERVADOS!!!
 
   "vars":[
     {
       "deploy": [
         {
-          "name": "",
-          "value": ""
+          "name": "var1",
+          "value": "varvalue1"
         }
       ]
     }
@@ -33,14 +34,16 @@
 
 //En los secrets tienes que especificar tanto el nombre que quieres que lleven como el
 //nombre del secret. Es igual que las variables pero mas seguros. Todo en texto plano(puedes poner el
-// mismo nombre a name y a namekey)
+// mismo nombre a name y a namekey).Si no quieres usar ninguno, deja el primer objeto vacio
+// CUIDADO CON USAR NOMBRES RESERVADOS!!!
+
   "secrets":[
     {
       "deploy": [
         {
-          "name": "",
-          "namekey": "",
-          "value": ""
+          "name": "secret1",
+          "namekey": "secret1",
+          "value": "estoessupersecreto"
         }
       ]
     }
